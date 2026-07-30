@@ -21,6 +21,8 @@ Scribis 是一款專為隱私與效率設計的高效能本地 AI 語音轉文�
 
 ## ✨ 核心特色
 
+![SCRIBIS-MCP-TESTER](images/zh/SCRIBIS-MCP-TESTER.png)
+
 ### 🎙️ 頂尖本地 AI 模型全支援
 Scribis 支援多種頂尖模型，滿足不同的轉錄需求，無需聯網即可確保高準確率與極速響應。
 - **OpenAI Whisper**: 精準辨識，支援超過 99 種語言。

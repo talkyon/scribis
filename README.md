@@ -21,6 +21,8 @@ Scribis is a high-performance local AI speech-to-text tool designed for privacy 
 
 ## ✨ Key Features
 
+![SCRIBIS-MCP-TESTER](images/en/SCRIBIS-MCP-TESTER.png)
+
 ### 🎙️ Support for Leading Local AI Models
 Scribis supports top-tier models for diverse transcription needs, ensuring high accuracy and speed without internet dependency.
 - **OpenAI Whisper**: Precision recognition supporting 99+ languages.

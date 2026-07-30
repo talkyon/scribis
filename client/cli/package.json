@@ -1,0 +1,21 @@
+{
+  "name": "scribis-cli",
+  "version": "1.0.0",
+  "description": "Scribis CLI - Stdio & MCP Proxy Client for Scribis Desktop Application",
+  "main": "bin/scribis.js",
+  "bin": {
+    "scribis": "bin/scribis.js"
+  },
+  "scripts": {
+    "start": "node bin/scribis.js"
+  },
+  "keywords": [
+    "scribis",
+    "mcp",
+    "transcribe",
+    "whisper",
+    "cli"
+  ],
+  "author": "Talkyon",
+  "license": "MIT"
+}
