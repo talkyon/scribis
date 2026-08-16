@@ -1,4 +1,4 @@
-﻿# Scribis MCP Client & AI Agent Skills (`talkyon/scribis-mcp-client`)
+# Scribis MCP Client & AI Agent Skills (`talkyon/scribis-mcp-client`)
 
 [English](README.md) | [繁體中文](README-zh.md)
 

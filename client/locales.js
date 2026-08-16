@@ -65,6 +65,7 @@ const locales = {
     tts_generate_btn: "Generate Speech WAV File",
     tts_generating: "Synthesizing...",
     tts_result_title: "Synthesis Successful! Audio Preview:",
+    tts_failed_title: "Synthesis Failed",
     
     // Timeline
     timeline_preview_title: "Video Frames & Vision Preview",
@@ -187,6 +188,7 @@ const locales = {
     tts_generate_btn: "生成語音 WAV 檔",
     tts_generating: "語音合成中...",
     tts_result_title: "合成成功！音訊試聽:",
+    tts_failed_title: "語音合成失敗",
     
     // Timeline
     timeline_preview_title: "畫面與預覽視覺類 (Video Frames & Vision Preview)",
