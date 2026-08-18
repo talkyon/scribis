@@ -861,7 +861,7 @@
 
         outputCard.classList.remove('hidden');
 
-        let parsed: any = null;
+        let parsed = null;
         if (res?.result?.content?.[0]?.text) {
           try {
             parsed = JSON.parse(res.result.content[0].text);
