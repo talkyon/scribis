@@ -8,7 +8,7 @@ This repository is for downloading public releases of Scribis.
 
 | Platform | Download Link |
 | :--- | :--- |
-| **macOS** | [![Download on the App Store](https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg)](https://apps.apple.com/us/app/scribis-speech-to-text/id6761047195?mt=12) <br> [Direct Download (.dmg)](https://github.com/talkyon/scribis/releases/latest/download/scribis.dmg) |
+| **macOS** | [![Download on the App Store](https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg)](https://apps.apple.com/us/app/scribis-speech-to-text/id6761047195?mt=12) <br> [Direct Download (Apple Silicon / ARM64)](https://github.com/talkyon/scribis/releases/latest/download/scribis_arm64.dmg) <br> [Direct Download (Intel / x64)](https://github.com/talkyon/scribis/releases/latest/download/scribis_x64.dmg) |
 | **Windows** | [Direct Download (.exe)](https://github.com/talkyon/scribis/releases/latest/download/scribis-setup.exe) <br> **Note**: This trial version does not currently include a digital signature. Windows may display a security warning during installation. You can click "Run anyway" to continue, but if you have security concerns, we recommend that you do not download or use it at this time. |
 
 ---
