@@ -22,7 +22,11 @@ function formatOutput(result, format = 'json') {
         {
           success: true,
           text: fullText,
-          duration: result.duration || (normalizedSegments.length > 0 ? normalizedSegments[normalizedSegments.length - 1].end : 0),
+          duration:
+            result.duration ||
+            (normalizedSegments.length > 0
+              ? normalizedSegments[normalizedSegments.length - 1].end
+              : 0),
           segments: normalizedSegments
         },
         null,
@@ -37,13 +41,16 @@ function formatOutput(result, format = 'json') {
         })
         .join('\n');
 
-    case 'vtt':
+    case 'vtt': {
       const vttLines = ['WEBVTT\n'];
       normalizedSegments.forEach((seg) => {
         const speakerPrefix = seg.speaker ? `<v ${seg.speaker}>` : '';
-        vttLines.push(`${secondsToVttTime(seg.start)} --> ${secondsToVttTime(seg.end)}\n${speakerPrefix}${seg.text}\n`);
+        vttLines.push(
+          `${secondsToVttTime(seg.start)} --> ${secondsToVttTime(seg.end)}\n${speakerPrefix}${seg.text}\n`
+        );
       });
       return vttLines.join('\n');
+    }
 
     case 'txt':
     default:

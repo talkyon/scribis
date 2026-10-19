@@ -1,17 +1,13 @@
 const net = require('net');
-const { loadDiscovery } = require('./mcp-client');
+const { resolveSocketTarget, staleDiscoveryHint } = require('./mcp-client');
+const { isMissingSocketError } = require('./discovery');
 
 function runMcpBridge() {
-  let socketPath = process.env.SCRIBIS_SOCKET_PATH;
-  if (!socketPath) {
-    const discovery = loadDiscovery();
-    if (discovery && discovery.socketPath) {
-      socketPath = discovery.socketPath;
-    }
-  }
+  const target = resolveSocketTarget();
+  const socketPath = target.socketPath;
 
   if (!socketPath) {
-    console.error('[scribis-cli] Error: Scribis desktop app is not running or MCP socket discovery file not found.');
+    console.error(`[scribis-cli] Error: ${target.error}`);
     process.exit(1);
   }
 
@@ -22,6 +18,9 @@ function runMcpBridge() {
 
   client.on('error', (err) => {
     console.error('[scribis-cli] MCP Connection error:', err.message);
+    if (target.source === 'discovery' && isMissingSocketError(err)) {
+      console.error(`[scribis-cli] ${staleDiscoveryHint(target.discoveryPath)}`);
+    }
     process.exit(1);
   });
 

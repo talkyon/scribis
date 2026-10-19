@@ -66,4 +66,3 @@ module.exports = {
   secondsToVttTime,
   createWavHeader
 };
-

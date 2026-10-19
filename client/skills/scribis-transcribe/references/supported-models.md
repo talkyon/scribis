@@ -17,7 +17,7 @@ scribis models
 ### MCP HTTP Mode:
 
 ```bash
-SCRIBIS_MCP_PORT=8890 scribis models --mcp
+scribis models --mcp
 ```
 
 ### Example Terminal Output:
@@ -34,6 +34,7 @@ Installed Models:
  - medium                    [Not Installed]
  - large-v2                  [Not Installed]
  - large-v3                  [Installed]
+ - large-v3-turbo            [Not Installed]
  - distil-large-v3           [Not Installed]
  - sense-voice-small-q8_0    [Installed]
  - parakeet-tdt-v3-int8      [Not Installed]
@@ -88,6 +89,11 @@ None (`{}`)
       "active": false
     },
     {
+      "id": "large-v3-turbo",
+      "installed": false,
+      "active": false
+    },
+    {
       "id": "distil-large-v3",
       "installed": false,
       "active": false
@@ -111,3 +117,4 @@ None (`{}`)
 }
 ```
 
+---

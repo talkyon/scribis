@@ -170,6 +170,15 @@
                     <span data-i18n="asr_drag_drop_text">Drag & drop audio/video here, or click to open file selection (Supports MP4, MOV, M4A, MP3, WAV, AAC, etc.)</span>
                   </div>
                 </div>
+
+                <!-- Large File Browser Notice Container -->
+                <div id="largeFileNotice" class="hidden p-3 bg-amber-950/40 border border-amber-800/60 rounded-lg text-amber-200 text-xs flex items-start space-x-2.5">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm mt-0.5"></i>
+                  <div class="flex-1 space-y-1">
+                    <div id="largeFileNoticeTitle" class="font-bold text-amber-300"></div>
+                    <div id="largeFileNoticeDesc" class="text-slate-300 text-[11px] leading-relaxed"></div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -306,6 +315,12 @@
               <textarea id="ttsText" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500" data-i18n="tts_text_placeholder" data-i18n-target="value"></textarea>
             </div>
 
+            <div>
+              <label for="ttsRefAudio" class="block text-slate-300 font-medium mb-1" data-i18n="tts_ref_audio_label">Reference audio (optional, Native engine)</label>
+              <input id="ttsRefAudio" type="file" accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg,.webm,.aac" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <p class="mt-1 text-slate-500" data-i18n="tts_ref_audio_help">Choose an audio sample to synthesize without a Voice ID. Max 20 MiB.</p>
+            </div>
+
             <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="block text-slate-300 font-medium mb-1">Voice ID:</label>
@@ -347,6 +362,52 @@
           </div>
         </div>
 
+        <!-- create_avatar Example -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <div class="border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-slate-200 flex items-center">
+              <i class="fa-solid fa-user-astronaut text-fuchsia-400 mr-2"></i>
+              <span data-i18n="avatar_generate_title">3. Create Talking Avatar</span>
+              (<code class="text-xs text-fuchsia-300">create_avatar</code>)
+            </h3>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label for="avatarImageFile" class="block text-slate-300 font-medium mb-1" data-i18n="avatar_image_label">Portrait Photo:</label>
+                <input id="avatarImageFile" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-fuchsia-500">
+              </div>
+              <div>
+                <label for="avatarAudioFile" class="block text-slate-300 font-medium mb-1" data-i18n="avatar_audio_label">Driving Audio:</label>
+                <input id="avatarAudioFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.mp4,.flac,.ogg,.webm,.aac,.caf,.aiff,.aif,.3gp" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-fuchsia-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+              <div>
+                <label for="avatarMaxDimension" class="block text-slate-300 font-medium mb-1" data-i18n="avatar_dimension_label">Maximum Output Dimension:</label>
+                <select id="avatarMaxDimension" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-fuchsia-500">
+                  <option value="512" selected>512 px (Default)</option>
+                  <option value="256">256 px</option>
+                </select>
+              </div>
+              <label for="avatarEnableBinary" class="flex items-center space-x-2 pb-2 text-slate-300">
+                <input id="avatarEnableBinary" type="checkbox" class="rounded bg-slate-950 border-slate-700 text-fuchsia-600 focus:ring-0">
+                <span data-i18n="avatar_binary_label">Return MP4 Base64 (enable_binary)</span>
+              </label>
+            </div>
+
+            <p class="text-slate-500" data-i18n="avatar_generate_help">Choose one portrait photo and one audio file. The browser sends them as Base64; the generated video is returned as a temp path unless Base64 is enabled.</p>
+            <button id="btnCreateAvatar" onclick="executeCreateAvatar()" class="w-full py-2.5 bg-gradient-to-r from-fuchsia-700 to-violet-700 hover:from-fuchsia-600 hover:to-violet-600 text-white font-semibold rounded-lg shadow-lg shadow-fuchsia-700/20 transition flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-clapperboard"></i>
+              <span data-i18n="avatar_generate_btn">Generate Avatar Video</span>
+            </button>
+          </div>
+
+          <pre id="avatarResult" class="hidden border-t border-slate-800 pt-3 text-xs font-mono text-fuchsia-200 max-h-64 overflow-auto whitespace-pre-wrap"></pre>
+        </div>
+
       </div>
 
       <!-- Tab 3: Timeline & Subtitle Tools -->
@@ -359,6 +420,13 @@
           </h3>
 
           <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">
+                <span data-i18n="timeline_videopath_label">Video Path (Optional, auto-detected from Scribis if active):</span>
+              </label>
+              <input id="frameVideoPath" type="text" placeholder="/path/to/video.mp4 (leave blank to auto-detect from Scribis)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs">
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-slate-300 font-medium mb-1"><span data-i18n="timeline_timestamp_label">Target Timestamp (sec):</span></label>
@@ -519,8 +587,11 @@
         if (parsed.models && parsed.models.length > 0) {
           const installedModels = parsed.models.filter(r => r.installed);
           const currentVal = select.value;
+          const hasActiveInstalled = installedModels.some(m => m.id === parsed.active_model);
+          const defaultSelectId = currentVal || (hasActiveInstalled ? parsed.active_model : (installedModels[0]?.id || ''));
+
           select.innerHTML = installedModels.map(m => `
-            <option value="${m.id}" ${m.id === (currentVal || parsed.active_model) ? 'selected' : ''}>
+            <option value="${m.id}" ${m.id === defaultSelectId ? 'selected' : ''}>
               ${m.id} ${m.id === parsed.active_model ? t("default_active") : ''}
             </option>
           `).join('');
@@ -566,7 +637,8 @@
     // ASR: transcribe_audio
     async function executeTranscribe() {
       const filePath = document.getElementById('asrFilePath').value.trim();
-      const model = document.getElementById('asrModel').value;
+      const modelSelect = document.getElementById('asrModel');
+      const model = modelSelect.value || (modelSelect.options[0]?.value || '');
       const langSelect = document.getElementById('asrLang').value;
       const langCustom = document.getElementById('asrLangCustom').value.trim();
       const lang = langSelect === 'custom' ? (langCustom || 'auto') : langSelect;
@@ -585,7 +657,15 @@
         if (filePath && (filePath.startsWith('/') || filePath.match(/^[a-zA-Z]:/))) {
           payloadArgs.path = filePath;
         } else if (lastSelectedFile) {
-          logConsole('info', `${t("converting_base64")} ${lastSelectedFile.name}`);
+          const sizeMb = (lastSelectedFile.size / (1024 * 1024)).toFixed(1);
+          // Prevent browser OOM and Mojo IPC limit kill (Error code 5) on large files
+          if (lastSelectedFile.size > 25 * 1024 * 1024) {
+            alert(
+              `${t('alert_file_too_large_prefix')} (${sizeMb} MB)\n\n${t('alert_file_too_large_desc')}\n\n${t('alert_file_too_large_example')}`
+            );
+            return;
+          }
+          logConsole('info', `${t("converting_base64")} ${lastSelectedFile.name} (${sizeMb} MB)`);
           const base64Data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result);
@@ -840,9 +920,18 @@
       const voice_id = document.getElementById('ttsVoiceId').value;
       const engine = document.getElementById('ttsEngine').value;
       const lang = document.getElementById('ttsLang').value;
+      const referenceFile = document.getElementById('ttsRefAudio').files[0];
 
-      if (!text || !voice_id) {
+      if (!text || (!voice_id && !referenceFile)) {
         alert(t('alert_tts_empty'));
+        return;
+      }
+      if (referenceFile && engine !== 'native') {
+        alert(t('alert_tts_ref_engine'));
+        return;
+      }
+      if (referenceFile && referenceFile.size > 20 * 1024 * 1024) {
+        alert('Reference audio must be 20 MiB or smaller.');
         return;
       }
 
@@ -851,7 +940,19 @@
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${t("tts_generating")}</span>`;
 
       try {
-        const res = await callApiTool('generate_tts', { text, voice_id, lang, engine });
+        const ttsArgs = { text, lang, engine };
+        if (referenceFile) {
+          const referenceDataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error || new Error('Failed to read reference audio'));
+            reader.readAsDataURL(referenceFile);
+          });
+          ttsArgs.ref_audio = referenceDataUrl;
+        } else {
+          ttsArgs.voice_id = voice_id;
+        }
+        const res = await callApiTool('generate_tts', ttsArgs);
         const outputCard = document.getElementById('ttsOutputCard');
         const pathText = document.getElementById('ttsPathText');
         const audioPlayer = document.getElementById('ttsAudioPlayer');
@@ -897,6 +998,79 @@
       }
     }
 
+    // Avatar: create_avatar example
+    async function readFileAsBase64(file) {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+      return String(dataUrl).split(',')[1] || '';
+    }
+
+    async function executeCreateAvatar() {
+      const imageFile = document.getElementById('avatarImageFile').files[0];
+      const audioFile = document.getElementById('avatarAudioFile').files[0];
+      if (!imageFile || !audioFile) {
+        alert(t('alert_avatar_inputs'));
+        return;
+      }
+      if (imageFile.size > 20 * 1024 * 1024 || audioFile.size > 100 * 1024 * 1024) {
+        alert(t('alert_avatar_size'));
+        return;
+      }
+
+      const btn = document.getElementById('btnCreateAvatar');
+      const result = document.getElementById('avatarResult');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${t('avatar_generating')}</span>`;
+      result.classList.remove('hidden');
+      result.textContent = t('avatar_generating');
+
+      try {
+        const imageFormat = imageFile.name.split('.').pop().toLowerCase();
+        const audioFormat = audioFile.name.split('.').pop().toLowerCase();
+        const [image_data, audio_data] = await Promise.all([
+          readFileAsBase64(imageFile),
+          readFileAsBase64(audioFile)
+        ]);
+        const res = await callApiTool('create_avatar', {
+          image_data,
+          image_format: imageFormat,
+          audio_data,
+          audio_format: audioFormat,
+          max_dimension: Number(document.getElementById('avatarMaxDimension').value),
+          enable_binary: document.getElementById('avatarEnableBinary').checked
+        });
+
+        let parsed = null;
+        if (res?.result?.content?.[0]?.text) {
+          try {
+            parsed = JSON.parse(res.result.content[0].text);
+          } catch {
+            parsed = { error: res.result.content[0].text };
+          }
+        }
+        if (res?.result?.isError || parsed?.success === false || parsed?.error || res?.error) {
+          result.className = 'border-t border-slate-800 pt-3 text-xs font-mono text-rose-300 max-h-64 overflow-auto whitespace-pre-wrap';
+          result.textContent = JSON.stringify(parsed || res.error || res, null, 2);
+        } else {
+          result.className = 'border-t border-slate-800 pt-3 text-xs font-mono text-fuchsia-200 max-h-64 overflow-auto whitespace-pre-wrap';
+          const displayResult = parsed?.video_base64
+            ? { ...parsed, video_base64: `[Base64 video omitted from preview: ${parsed.video_base64.length} characters]` }
+            : parsed;
+          result.textContent = JSON.stringify(displayResult || res, null, 2);
+        }
+      } catch (error) {
+        result.className = 'border-t border-slate-800 pt-3 text-xs font-mono text-rose-300 max-h-64 overflow-auto whitespace-pre-wrap';
+        result.textContent = `${t('error')} ${error.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-clapperboard"></i> <span>${t('avatar_generate_btn')}</span>`;
+      }
+    }
+
     // Timeline & Preview Tools
     async function executeGetTimelineState() {
       await callApiTool('get_timeline_state', {});
@@ -917,7 +1091,10 @@
 
     async function executeGetVideoFrame() {
       const timestamp_sec = parseFloat(document.getElementById('frameTimestamp').value) || 0;
-      const res = await callApiTool('get_video_frame', { timestamp_sec });
+      const video_path = document.getElementById('frameVideoPath')?.value?.trim();
+      const params = { timestamp_sec };
+      if (video_path) params.video_path = video_path;
+      const res = await callApiTool('get_video_frame', params);
       displayPreviewImage(res);
     }
 
@@ -925,12 +1102,19 @@
       const imgContainer = document.getElementById('previewImageContainer');
       const img = document.getElementById('previewImage');
       if (res?.result?.content?.[0]?.text) {
-        const parsed = JSON.parse(res.result.content[0].text);
-        if (parsed.data_url) {
-          img.src = parsed.data_url;
-          imgContainer.classList.remove('hidden');
-        } else if (parsed.frame_path) {
-          logConsole('info', `${t('frame_saved')} ${parsed.frame_path}`);
+        try {
+          const parsed = JSON.parse(res.result.content[0].text);
+          if (parsed.data_url) {
+            img.src = parsed.data_url;
+            imgContainer.classList.remove('hidden');
+          } else if (parsed.frame_path) {
+            logConsole('info', `${t('frame_saved') || 'Frame saved:'} ${parsed.frame_path}`);
+          }
+          if (parsed.error) {
+            logConsole('error', `Frame error: ${parsed.error}`);
+          }
+        } catch (e) {
+          logConsole('error', `Failed to parse frame response: ${e.message}`);
         }
       }
     }
@@ -992,6 +1176,32 @@
       document.getElementById(`content-${tabKey}`).classList.remove('hidden');
     }
 
+    // Safe Console Sanitizer (Prevents Chromium OOM / DOM explosion from megabyte-scale base64 strings)
+    function sanitizeForLogging(val, depth = 0) {
+      if (depth > 6) return '[Max Depth]';
+      if (typeof val === 'string') {
+        if (val.length > 250 && (val.startsWith('data:') || val.includes('base64') || val.length > 1500)) {
+          return `[Data string truncated: ${val.length} characters (~${(val.length / 1024 / 1024).toFixed(2)} MB)]`;
+        }
+        return val;
+      }
+      if (Array.isArray(val)) {
+        return val.slice(0, 50).map(item => sanitizeForLogging(item, depth + 1));
+      }
+      if (val && typeof val === 'object') {
+        const clean = {};
+        for (const [k, v] of Object.entries(val)) {
+          if (typeof v === 'string' && v.length > 250 && (k.includes('base64') || k.includes('audio') || k.includes('data') || v.startsWith('data:'))) {
+            clean[k] = `[base64 string truncated: ${v.length} characters (~${(v.length / 1024 / 1024).toFixed(2)} MB)]`;
+          } else {
+            clean[k] = sanitizeForLogging(v, depth + 1);
+          }
+        }
+        return clean;
+      }
+      return val;
+    }
+
     // Logger
     function logConsole(type, title, data = null) {
       const container = document.getElementById('consoleLogContainer');
@@ -1010,6 +1220,8 @@
         typeBadge = `<span class="bg-slate-800 text-slate-300 text-[10px] px-1.5 py-0.5 rounded font-bold">INFO</span>`;
       }
 
+      const safeData = data ? sanitizeForLogging(data) : null;
+
       item.innerHTML = `
         <div class="flex items-center justify-between text-[10px]">
           <div class="flex items-center space-x-1.5">
@@ -1018,7 +1230,7 @@
           </div>
           <span class="text-slate-500">${time}</span>
         </div>
-        ${data ? `<pre class="text-[10px] bg-slate-900 p-2 rounded border border-slate-800/80 overflow-x-auto text-slate-300 font-mono">${JSON.stringify(data, null, 2)}</pre>` : ''}
+        ${safeData ? `<pre class="text-[10px] bg-slate-900 p-2 rounded border border-slate-800/80 overflow-x-auto text-slate-300 font-mono">${JSON.stringify(safeData, null, 2)}</pre>` : ''}
       `;
 
       container.appendChild(item);
@@ -1029,17 +1241,68 @@
       document.getElementById('consoleLogContainer').innerHTML = `<div class="text-slate-500 italic">${t('console_cleared')}</div>`;
     }
 
+    // Large File Notice Handlers
+    function showLargeFileNotice(fileName, sizeMb) {
+      const notice = document.getElementById('largeFileNotice');
+      const title = document.getElementById('largeFileNoticeTitle');
+      const desc = document.getElementById('largeFileNoticeDesc');
+      if (notice && title && desc) {
+        title.textContent = `${t('large_file_title')} (${sizeMb} MB)`;
+        desc.textContent = t('large_file_desc');
+        notice.classList.remove('hidden');
+      }
+    }
+
+    function hideLargeFileNotice() {
+      const notice = document.getElementById('largeFileNotice');
+      if (notice) notice.classList.add('hidden');
+    }
+
+    function processSelectedFile(file) {
+      lastSelectedFile = file;
+      const path = file.path || file.name;
+      document.getElementById('asrFilePath').value = path;
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+
+      if (!file.path && file.size > 25 * 1024 * 1024) {
+        showLargeFileNotice(file.name, sizeMb);
+      } else {
+        hideLargeFileNotice();
+      }
+      logConsole('info', `${t('file_selected')} ${file.name} (${sizeMb} MB)`);
+    }
+
     // File Selector & Drag-and-Drop Handlers
-    function openNativeFileDialog() {
+    async function openNativeFileDialog() {
+      const baseUrl = getBaseUrl();
+      try {
+        // POST with a JSON body: the server refuses GET so an image or link cannot open the dialog.
+        const res = await fetch(`${baseUrl}/api/select-file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.canceled && data.path) {
+            document.getElementById('asrFilePath').value = data.path;
+            lastSelectedFile = null;
+            hideLargeFileNotice();
+            logConsole('info', `${t('file_selected')} ${data.path}`);
+            return;
+          } else if (data.canceled) {
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback to browser input
+      }
       document.getElementById('asrFileSelector').click();
     }
 
     function handleFileSelected(input) {
       if (input.files && input.files[0]) {
-        lastSelectedFile = input.files[0];
-        const path = lastSelectedFile.path || lastSelectedFile.name;
-        document.getElementById('asrFilePath').value = path;
-        logConsole('info', `${t('file_selected')} ${lastSelectedFile.name} (${path})`);
+        processSelectedFile(input.files[0]);
       }
     }
 
@@ -1061,16 +1324,17 @@
       document.getElementById('dropZone').classList.remove('border-blue-500', 'bg-blue-950/40');
 
       if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        lastSelectedFile = e.dataTransfer.files[0];
-        const path = lastSelectedFile.path || lastSelectedFile.name;
-        document.getElementById('asrFilePath').value = path;
-        logConsole('info', `${t('file_dropped')} ${lastSelectedFile.name} (${path})`);
+        processSelectedFile(e.dataTransfer.files[0]);
       }
     }
 
     // Auto-fetch models, voices and initialize TTS options on page startup
     window.addEventListener('DOMContentLoaded', () => {
       setLanguage('en');
+      // Served by Scribis itself: talk to the same origin (other origins are refused).
+      if (location.protocol === 'http:') {
+        document.getElementById('serverUrl').value = location.origin;
+      }
       executeListModels().catch(() => {});
     });
   </script>

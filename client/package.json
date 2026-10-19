@@ -1,11 +1,12 @@
 {
-  "name": "scribis-client-demo",
+  "name": "scribis-mcp-client-demo",
   "version": "1.0.0",
   "description": "Example MCP Client to test and interact with Scribis MCP Server",
   "main": "client.js",
   "type": "module",
   "scripts": {
-    "start": "node client.js"
+    "start": "node client.js",
+    "check:public": "node scripts/check-public-content.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0"

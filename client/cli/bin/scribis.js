@@ -5,11 +5,31 @@ const path = require('path');
 const os = require('os');
 const { formatOutput } = require('../lib/output-formatter');
 const { runMcpBridge } = require('../lib/proxy');
-const { callTool, checkConnectionStatus, getSocketPath, getMcpPort } = require('../lib/mcp-client');
+const { callTool, checkConnectionStatus } = require('../lib/mcp-client');
 const { createWavHeader } = require('../lib/utils');
 
-const KNOWN_BOOLEAN_FLAGS = new Set(['mcp', 'persist', 'cuda', 'gpu', 'vulkan', 'help', 'h', 'realtime', 'vad']);
-const KNOWN_SUBCOMMANDS = new Set(['transcribe', 'stream', 'models', 'status', 'install-cli', 'mcp-bridge', 'help']);
+const KNOWN_BOOLEAN_FLAGS = new Set([
+  'mcp',
+  'persist',
+  'cuda',
+  'gpu',
+  'vulkan',
+  'help',
+  'h',
+  'realtime',
+  'vad'
+]);
+const KNOWN_SUBCOMMANDS = new Set([
+  'transcribe',
+  'stream',
+  'models',
+  'status',
+  'install-cli',
+  'mcp-bridge',
+  'open',
+  'youtube',
+  'help'
+]);
 
 function parseArgs(args) {
   const flags = {};
@@ -20,14 +40,24 @@ function parseArgs(args) {
       const parts = arg.slice(2).split('=');
       const key = parts[0];
       let val = parts[1];
-      if (val === undefined && !KNOWN_BOOLEAN_FLAGS.has(key) && i + 1 < args.length && !args[i + 1].startsWith('-') && !KNOWN_SUBCOMMANDS.has(args[i + 1])) {
+      if (
+        val === undefined &&
+        !KNOWN_BOOLEAN_FLAGS.has(key) &&
+        i + 1 < args.length &&
+        !args[i + 1].startsWith('-') &&
+        !KNOWN_SUBCOMMANDS.has(args[i + 1])
+      ) {
         val = args[++i];
       }
       flags[key] = val !== undefined ? val : true;
     } else if (arg.startsWith('-') && arg.length === 2) {
       const key = arg.slice(1);
       let val;
-      if (i + 1 < args.length && !args[i + 1].startsWith('-') && !KNOWN_SUBCOMMANDS.has(args[i + 1])) {
+      if (
+        i + 1 < args.length &&
+        !args[i + 1].startsWith('-') &&
+        !KNOWN_SUBCOMMANDS.has(args[i + 1])
+      ) {
         val = args[++i];
       }
       flags[key] = val !== undefined ? val : true;
@@ -49,10 +79,17 @@ Usage:
   scribis status                         Show stdio / MCP connection and app status
   scribis install-cli                    Install scribis executable wrapper into system PATH
   scribis mcp-bridge                     Run stdio MCP bridge (proxies stdio ↔ socket to Scribis app)
+  scribis open youtube [url]             Open the YouTube AI browser (and load a YouTube URL or video ID)
+  scribis open cuts <project_id>         Open a Cuts project in the timeline editor
+  scribis open scene <scene_id>          Open a scene in the scene editor
+  scribis youtube captions <url>         Print a YouTube video's captions (--lang, --output text|srt|json, -o)
+  scribis youtube quota                  Show this month's YouTube video quota (free: 10 new videos)
+  scribis youtube history [query]        List videos in the Scribis YouTube history (free to reopen)
 
 Modes:
   stdio (Default):  Communicates via local IPC stdio/socket with running Scribis app.
-  MCP (--mcp):      Communicates via MCP HTTP protocol. Requires SCRIBIS_MCP_PORT env var.
+  MCP (--mcp):      Communicates via MCP HTTP protocol on the port the running app publishes
+                    (or SCRIBIS_MCP_PORT).
 
 Options for transcribe / stream:
   --model <name>       Whisper / ASR model name (e.g. base, small, medium, large-v3, sense-voice-small-q8_0, qwen3-asr-0.6b)
@@ -64,17 +101,19 @@ Options for transcribe / stream:
   --chunk <sec>        Chunk size in seconds for real-time incremental output (default: 3)
   --vad                Enable VAD (Voice Activity Detection) mode (transcribe on sentence pauses)
   --vad-threshold <n>  VAD energy threshold (default: 500)
-  --mcp                Use MCP HTTP protocol (requires SCRIBIS_MCP_PORT in env)
+  --mcp                Use MCP HTTP protocol (port from SCRIBIS_MCP_PORT or the running app)
 
 Environment Variables:
-  SCRIBIS_MCP_PORT     Port for MCP HTTP communication when using MCP mode
+  SCRIBIS_MCP_PORT     MCP HTTP port override: the port shown in Settings -> MCP (default 8890)
   SCRIBIS_SOCKET_PATH  Direct socket path override for stdio communication
 
 Examples:
   scribis transcribe ~/lecture.mp4 --model large-v3 --lang zh --output srt -o lecture.srt
   ffmpeg -re -i audio.wav -ar 16000 -ac 1 -f s16le - | scribis stream --vad --lang zh
   ffmpeg -re -i audio.wav -ar 16000 -ac 1 -f s16le - | scribis stream --realtime --chunk 3
-  SCRIBIS_MCP_PORT=8890 scribis transcribe ~/interview.wav --mcp --output json
+  scribis transcribe ~/interview.wav --mcp --output json
+  scribis open youtube https://youtu.be/dQw4w9WgXcQ
+  scribis youtube captions https://youtu.be/dQw4w9WgXcQ --lang en --output srt -o talk.srt
 `);
 }
 
@@ -124,7 +163,8 @@ async function handleTranscribe(positional, flags) {
 
 async function processAndOutputChunk(rawPcmBuffer, timeOffsetSec, chunkIdx, flags) {
   if (!rawPcmBuffer || rawPcmBuffer.length === 0) return;
-  const isRiff = rawPcmBuffer.length >= 4 && rawPcmBuffer.subarray(0, 4).toString('ascii') === 'RIFF';
+  const isRiff =
+    rawPcmBuffer.length >= 4 && rawPcmBuffer.subarray(0, 4).toString('ascii') === 'RIFF';
   let wavBuffer = rawPcmBuffer;
   if (!isRiff) {
     const header = createWavHeader(rawPcmBuffer.length, 16000, 1, 16);
@@ -176,7 +216,9 @@ async function handleStream(flags) {
 
   if (isVad) {
     const vadThreshold = parseFloat(flags['vad-threshold'] || flags.threshold) || 500;
-    console.error(`[scribis-cli] VAD (Voice Activity Detection) streaming enabled (threshold: ${vadThreshold})...`);
+    console.error(
+      `[scribis-cli] VAD (Voice Activity Detection) streaming enabled (threshold: ${vadThreshold})...`
+    );
 
     const FRAME_SAMPLES = 512;
     const FRAME_BYTES = FRAME_SAMPLES * 2;
@@ -269,7 +311,9 @@ async function handleStream(flags) {
       await drainQueue();
     });
   } else if (isRealtime) {
-    console.error(`[scribis-cli] Real-time incremental streaming enabled (chunk size: ${chunkSizeSec}s)...`);
+    console.error(
+      `[scribis-cli] Real-time incremental streaming enabled (chunk size: ${chunkSizeSec}s)...`
+    );
 
     const bytesPerSec = 16000 * 2;
     const targetChunkBytes = Math.floor(chunkSizeSec * bytesPerSec);
@@ -385,13 +429,17 @@ async function handleModels(flags) {
 
 async function handleStatus(flags) {
   console.log('=== Scribis CLI Status ===');
-  const status = checkConnectionStatus(flags);
+  const status = await checkConnectionStatus(flags);
 
   if (status.mode === 'mcp') {
     console.log('Protocol Mode:       MCP (HTTP)');
     if (status.ok) {
-      console.log(`MCP Port:            ${status.port}`);
-      console.log(`Status:              Configured (HTTP Target: http://127.0.0.1:${status.port}/mcp)`);
+      console.log(
+        `MCP Port:            ${status.port}${status.portSource === 'discovery' ? ' (from discovery.json)' : ''}`
+      );
+      console.log(
+        `Status:              Configured (HTTP Target: http://127.0.0.1:${status.port}/mcp)`
+      );
     } else {
       console.log(`Status:              ❌ Error — ${status.error}`);
     }
@@ -409,10 +457,17 @@ async function handleStatus(flags) {
   if (status.ok) {
     try {
       const modelsInfo = await callTool('list_models', {}, flags);
+      // In HTTP mode the configured target is only proven once the app answers a tool call.
+      if (status.mode === 'mcp')
+        console.log('App Query:           ✅ Connected to Scribis over MCP HTTP');
       console.log(`Default Model:       ${modelsInfo.active_model || 'base'}`);
     } catch (e) {
-      console.log(`App Query:           Unable to reach app tool handler (${e.message})`);
+      console.log(`App Query:           ❌ Unable to reach app tool handler (${e.message})`);
+      process.exitCode = 1;
     }
+  } else {
+    // Scripts and agents gate on the exit code; the printed error explains what to do.
+    process.exitCode = 1;
   }
 }
 
@@ -434,7 +489,9 @@ function handleInstallCli() {
       fs.chmodSync(cliBinPath, '755');
       fs.chmodSync(targetLink, '755');
       console.log(`✅ Successfully installed symlink at: ${targetLink}`);
-      console.log(`Ensure '${localBinDir}' is included in your shell PATH (e.g. in ~/.zshrc or ~/.bashrc):`);
+      console.log(
+        `Ensure '${localBinDir}' is included in your shell PATH (e.g. in ~/.zshrc or ~/.bashrc):`
+      );
       console.log(`  export PATH="$HOME/.local/bin:$PATH"`);
     } catch (err) {
       console.error(`❌ Failed to create symlink: ${err.message}`);
@@ -453,6 +510,145 @@ function handleInstallCli() {
     } catch (err) {
       console.error(`❌ Failed to create batch wrapper: ${err.message}`);
     }
+  }
+}
+
+const OPEN_TARGETS = {
+  youtube: { tool: 'app_open_youtube_browser', key: 'url', required: false },
+  cuts: { tool: 'cuts_open_project', key: 'project_id', required: true },
+  scene: { tool: 'scenes_open', key: 'scene_id', required: true }
+};
+
+async function handleOpen(positional, flags) {
+  const target = OPEN_TARGETS[positional[1]];
+  const value = positional[2];
+  if (!target || (target.required && !value)) {
+    console.error(
+      'Usage: scribis open youtube [url] | scribis open cuts <project_id> | scribis open scene <scene_id>'
+    );
+    process.exit(1);
+  }
+  try {
+    const result = await callTool(target.tool, value ? { [target.key]: value } : {}, flags);
+    if (!result || result.success === false) {
+      console.error(`[scribis-cli] ${result?.error || 'Scribis could not open the page'}`);
+      process.exit(1);
+    }
+    console.log(result.message || result.status || 'Opened');
+    if (flags.output === 'json') console.log(JSON.stringify(result, null, 2));
+  } catch (err) {
+    console.error(`[scribis-cli] Failed to open the page: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+const YOUTUBE_PAGE_SIZE = 2000;
+
+function clock(seconds) {
+  const whole = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(whole / 3600);
+  const m = Math.floor((whole % 3600) / 60);
+  const s = String(whole % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+function srtTime(seconds) {
+  const ms = Math.max(0, Math.round(seconds * 1000));
+  const pad = (value, width = 2) => String(value).padStart(width, '0');
+  return `${pad(Math.floor(ms / 3600000))}:${pad(Math.floor((ms % 3600000) / 60000))}:${pad(
+    Math.floor((ms % 60000) / 1000)
+  )},${pad(ms % 1000, 3)}`;
+}
+
+function quotaLine(quota) {
+  if (!quota) return '';
+  return quota.is_pro
+    ? 'YouTube quota: Scribis Pro (unlimited)'
+    : `YouTube quota: ${quota.used}/${quota.limit} new videos used this month, ${quota.remaining} left`;
+}
+
+async function handleYouTube(positional, flags) {
+  const action = positional[1];
+  const fail = (message) => {
+    console.error(`[scribis-cli] ${message}`);
+    process.exit(1);
+  };
+  try {
+    if (action === 'quota') {
+      const result = await callTool('youtube_get_quota', {}, flags);
+      if (!result || result.success === false)
+        fail(result?.error || 'Scribis could not read the quota');
+      if (flags.output === 'json') console.log(JSON.stringify(result, null, 2));
+      else console.log(result.message || quotaLine(result));
+      return;
+    }
+    if (action === 'history') {
+      const args = { limit: 50 };
+      if (positional[2]) args.query = positional.slice(2).join(' ');
+      const result = await callTool('youtube_list_history', args, flags);
+      if (!result || result.success === false)
+        fail(result?.error || 'Scribis could not read the history');
+      if (flags.output === 'json') return console.log(JSON.stringify(result, null, 2));
+      for (const video of result.videos || [])
+        console.log(
+          `${video.video_id}  ${video.has_captions ? 'captions' : '        '}  ${video.title || video.url}`
+        );
+      return;
+    }
+    if (action !== 'captions' || !positional[2]) {
+      fail(
+        'Usage: scribis youtube captions <url> [--lang <code>] [--output text|srt|json] [-o file] | scribis youtube quota | scribis youtube history [query]'
+      );
+    }
+    const format = flags.output || 'text';
+    if (!['text', 'srt', 'json'].includes(format)) fail('--output must be text, srt or json');
+    const cues = [];
+    let first;
+    let offset = 0;
+    for (;;) {
+      const args = { url: positional[2], format: 'cues', offset, limit: YOUTUBE_PAGE_SIZE };
+      if (typeof flags.lang === 'string') args.lang = flags.lang;
+      const page = await callTool('youtube_get_captions', args, flags);
+      if (!page || page.success === false) {
+        const quota = page?.quota ? `\n${quotaLine(page.quota)}` : '';
+        fail(`${page?.error || 'Scribis could not read the captions'}${quota}`);
+      }
+      first = first || page;
+      cues.push(...(page.cues || []));
+      if (page.next_offset === undefined || page.next_offset === null) break;
+      offset = page.next_offset;
+    }
+    let output;
+    if (format === 'json') {
+      const meta = { ...first };
+      for (const key of ['cues', 'next_offset', 'offset', 'returned', 'next']) delete meta[key];
+      output = JSON.stringify({ ...meta, cues }, null, 2);
+    } else if (format === 'srt') {
+      output = cues
+        .map(
+          (cue, index) =>
+            `${index + 1}\n${srtTime(cue.start)} --> ${srtTime(cue.end)}\n${cue.text}\n`
+        )
+        .join('\n');
+    } else {
+      output = cues
+        .map((cue) => `[${clock(cue.start)}] ${cue.text.replace(/\s+/g, ' ')}`)
+        .join('\n');
+    }
+    const outFile = flags.o || flags.out;
+    if (typeof outFile === 'string') {
+      fs.writeFileSync(path.resolve(outFile), output + '\n', 'utf8');
+      console.error(`[scribis-cli] Wrote ${cues.length} cues to ${path.resolve(outFile)}`);
+    } else {
+      console.log(output);
+    }
+    console.error(
+      `[scribis-cli] ${first.title || first.video_id} · ${first.language} · ${
+        first.source === 'history' ? 'from the YouTube history (free)' : 'fetched from YouTube'
+      }${first.charged ? ' (used 1 monthly load)' : ''}. ${quotaLine(first.quota)}`
+    );
+  } catch (err) {
+    fail(`YouTube command failed: ${err.message}`);
   }
 }
 
@@ -489,6 +685,14 @@ async function main() {
 
     case 'mcp-bridge':
       runMcpBridge();
+      break;
+
+    case 'open':
+      await handleOpen(positional, flags);
+      break;
+
+    case 'youtube':
+      await handleYouTube(positional, flags);
       break;
 
     case 'help':
